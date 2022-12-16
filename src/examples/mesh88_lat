@@ -30,7 +30,7 @@
 // Topology
 
 topology = mesh;
-k = 8;
+k = 13;
 n = 2;
 
 // Routing
@@ -55,14 +55,17 @@ input_speedup     = 2;
 output_speedup    = 1;
 internal_speedup  = 1.0;
 
-
+subnets = 1;
 // Traffic
-traffic = transpose;
-packet_size = 20;
+traffic = neurosim;
+packet_size = 100;
 
 
 // Simulation
 sim_type = latency;
 
 injection_rate = 0.005;
-
+sample_period = 1;
+sim_power = 0;
+Neurosim_mapping_file = /DNN_NeuroSim_V1.3/Inference_pytorch/BIG_ResNet50.txt;
+Neurosim_mapping_file_small  = /DNN_NeuroSim_V1.3/Inference_pytorch/SMALL_ResNet50.txt;

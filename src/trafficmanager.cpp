@@ -31,7 +31,7 @@
 #include <limits>
 #include <cstdlib>
 #include <ctime>
-
+#include <algorithm>
 #include "booksim.hpp"
 #include "booksim_config.hpp"
 #include "trafficmanager.hpp"
@@ -41,21 +41,21 @@
 #include "packet_reply_info.hpp"
 
 TrafficManager * TrafficManager::New(Configuration const & config,
-                                     vector<Network *> const & net)
+                                     vector<Network *> const & net ,vector<string> input_node_name, vector<int> input_node_location, vector<int> cur_node_location, int input_activation_size, float injection_rate)
 {
     TrafficManager * result = NULL;
     string sim_type = config.GetStr("sim_type");
     if((sim_type == "latency") || (sim_type == "throughput")) {
-        result = new TrafficManager(config, net);
+        result = new TrafficManager(config, net, input_node_name , input_node_location, cur_node_location, input_activation_size, injection_rate);
     } else if(sim_type == "batch") {
-        result = new BatchTrafficManager(config, net);
+        result = new BatchTrafficManager(config, net, input_node_name , input_node_location, cur_node_location, input_activation_size, injection_rate);
     } else {
         cerr << "Unknown simulation type: " << sim_type << endl;
     } 
     return result;
 }
 
-TrafficManager::TrafficManager( const Configuration &config, const vector<Network *> & net )
+TrafficManager::TrafficManager( const Configuration &config, const vector<Network *> & net ,vector<string> input_node_name, vector<int> input_node_location, vector<int> cur_node_location,int input_activation_size, float injection_rate)
     : Module( 0, "traffic_manager" ), _net(net), _empty_network(false), _deadlock_timer(0), _reset_time(0), _drain_time(-1), _cur_id(0), _cur_pid(0), _time(0)
 {
 
@@ -152,65 +152,74 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
     }
     _write_reply_size.resize(_classes, _write_reply_size.back());
 
-    string packet_size_str = config.GetStr("packet_size");
-    if(packet_size_str.empty()) {
-        _packet_size.push_back(vector<int>(1, config.GetInt("packet_size")));
-    } else {
-        vector<string> packet_size_strings = tokenize_str(packet_size_str);
-        for(size_t i = 0; i < packet_size_strings.size(); ++i) {
-            _packet_size.push_back(tokenize_int(packet_size_strings[i]));
-        }
-    }
-    _packet_size.resize(_classes, _packet_size.back());
+    // string packet_size_str = config.GetStr("packet_size");
+    // if(packet_size_str.empty()) {
+    //     _packet_size.push_back(vector<int>(1, config.GetInt("packet_size")));
+    // } else {
+    //     vector<string> packet_size_strings = tokenize_str(packet_size_str);
+    //     for(size_t i = 0; i < packet_size_strings.size(); ++i) {
+    //         _packet_size.push_back(tokenize_int(packet_size_strings[i]));
+    //     }
+    // }
+    // _packet_size.resize(_classes, _packet_size.back());
 
-    string packet_size_rate_str = config.GetStr("packet_size_rate");
-    if(packet_size_rate_str.empty()) {
-        int rate = config.GetInt("packet_size_rate");
-        assert(rate >= 0);
-        for(int c = 0; c < _classes; ++c) {
-            int size = _packet_size[c].size();
-            _packet_size_rate.push_back(vector<int>(size, rate));
-            _packet_size_max_val.push_back(size * rate - 1);
-        }
-    } else {
-        vector<string> packet_size_rate_strings = tokenize_str(packet_size_rate_str);
-        packet_size_rate_strings.resize(_classes, packet_size_rate_strings.back());
-        for(int c = 0; c < _classes; ++c) {
-            vector<int> rates = tokenize_int(packet_size_rate_strings[c]);
-            rates.resize(_packet_size[c].size(), rates.back());
-            _packet_size_rate.push_back(rates);
-            int size = rates.size();
-            int max_val = -1;
-            for(int i = 0; i < size; ++i) {
-                int rate = rates[i];
-                assert(rate >= 0);
-                max_val += rate;
-            }
-            _packet_size_max_val.push_back(max_val);
-        }
-    }
+    // string packet_size_rate_str = config.GetStr("packet_size_rate");
+    // if(packet_size_rate_str.empty()) {
+    //     int rate = config.GetInt("packet_size_rate");
+    //     assert(rate >= 0);
+    //     for(int c = 0; c < _classes; ++c) {
+    //         int size = _packet_size[c].size();
+    //         _packet_size_rate.push_back(vector<int>(size, rate));
+    //         _packet_size_max_val.push_back(size * rate - 1);
+    //     }
+    // } else {
+    //     vector<string> packet_size_rate_strings = tokenize_str(packet_size_rate_str);
+    //     packet_size_rate_strings.resize(_classes, packet_size_rate_strings.back());
+    //     for(int c = 0; c < _classes; ++c) {
+    //         vector<int> rates = tokenize_int(packet_size_rate_strings[c]);
+    //         rates.resize(_packet_size[c].size(), rates.back());
+    //         _packet_size_rate.push_back(rates);
+    //         int size = rates.size();
+    //         int max_val = -1;
+    //         for(int i = 0; i < size; ++i) {
+    //             int rate = rates[i];
+    //             assert(rate >= 0);
+    //             max_val += rate;
+    //         }
+    //         _packet_size_max_val.push_back(max_val);
+    //     }
+    // }
   
-    for(int c = 0; c < _classes; ++c) {
-        if(_use_read_write[c]) {
-            _packet_size[c] = 
-                vector<int>(1, (_read_request_size[c] + _read_reply_size[c] +
-                                _write_request_size[c] + _write_reply_size[c]) / 2);
-            _packet_size_rate[c] = vector<int>(1, 1);
-            _packet_size_max_val[c] = 0;
-        }
-    }
+    // for(int c = 0; c < _classes; ++c) {
+    //     if(_use_read_write[c]) {
+    //         _packet_size[c] = 
+    //             vector<int>(1, (_read_request_size[c] + _read_reply_size[c] +
+    //                             _write_request_size[c] + _write_reply_size[c]) / 2);
+    //         _packet_size_rate[c] = vector<int>(1, 1);
+    //         _packet_size_max_val[c] = 0;
+    //     }
+    // }
 
-    _load = config.GetFloatArray("injection_rate"); 
-    if(_load.empty()) {
-        _load.push_back(config.GetFloat("injection_rate"));
-    }
-    _load.resize(_classes, _load.back());
+    // _load = config.GetFloatArray("injection_rate"); 
+    // if(_load.empty()) {
+    //     _load.push_back(config.GetFloat("injection_rate"));
+    // }
+    // _load.resize(_classes, _load.back());
 
-    if(config.GetInt("injection_rate_uses_flits")) {
-        for(int c = 0; c < _classes; ++c)
-            _load[c] /= _GetAveragePacketSize(c);
+    // if(config.GetInt("injection_rate_uses_flits")) {
+    //     for(int c = 0; c < _classes; ++c)
+    //         _load[c] /= _GetAveragePacketSize(c);
+    // }
+    
+    _input_node_location = input_node_location;
+    for(int i= 0 ; i<_input_node_location.size() ; i++){
+        _input_activation_size[_input_node_location[i]] = input_activation_size; 
     }
-
+    _cur_node_location = cur_node_location;
+    for(int c = 0; c < _classes; ++c){
+        _load.push_back(injection_rate);
+    }
+    
     _traffic = config.GetStrArray("traffic");
     _traffic.resize(_classes, _traffic.back());
 
@@ -229,6 +238,7 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
 
     for(int c = 0; c < _classes; ++c) {
         _traffic_pattern[c] = TrafficPattern::New(_traffic[c], _nodes, &config);
+        cout<<"load"<< _load[c]<< endl;
         _injection_process[c] = InjectionProcess::New(injection_process[c], _nodes, _load[c], &config);
     }
 
@@ -751,7 +761,7 @@ void TrafficManager::_RetireFlit( Flit *f, int dest )
     }
 }
 
-int TrafficManager::_IssuePacket( int source, int cl )
+int TrafficManager::_IssuePacket( int source, int cl)
 {
     int result = 0;
     if(_use_read_write[cl]){ //use read and write
@@ -762,10 +772,8 @@ int TrafficManager::_IssuePacket( int source, int cl )
                 result = -1;
             }
         } else {
-      
             //produce a packet
             if(_injection_process[cl]->test(source)) {
-	
                 //coin toss to determine request type.
                 result = (RandomFloat() < _write_fraction[cl]) ? 2 : 1;
 	
@@ -776,6 +784,7 @@ int TrafficManager::_IssuePacket( int source, int cl )
         result = _injection_process[cl]->test(source) ? 1 : 0;
         _requestsOutstanding[source]++;
     } 
+    
     if(result != 0) {
         _packet_seq_no[source]++;
     }
@@ -783,15 +792,26 @@ int TrafficManager::_IssuePacket( int source, int cl )
 }
 
 void TrafficManager::_GeneratePacket( int source, int stype, 
-                                      int cl, int time )
+                                      int cl, int time ,int cur_node)
 {
     assert(stype!=0);
 
     Flit::FlitType packet_type = Flit::ANY_TYPE;
-    int size = _GetNextPacketSize(cl); //input size 
+    // int size = 4; //input size 
+    int size = _input_activation_size[source];
     int pid = _cur_pid++;
     assert(_cur_pid);
+
+
+    
     int packet_destination = _traffic_pattern[cl]->dest(source);
+    if(_traffic[cl] == "neurosim"){
+        packet_destination = _cur_node_location[cur_node];
+        cout<< "size" << size << endl;
+        cout<< "source" << source << endl;
+        cout<< "packet_destination" << packet_destination << endl;
+    }
+
     bool record = false;
     bool watch = gWatchOut && (_packets_to_watch.count(pid) > 0);
     if(_use_read_write[cl]){
@@ -827,14 +847,12 @@ void TrafficManager::_GeneratePacket( int source, int stype,
             rinfo->Free();
         }
     }
-
     if ((packet_destination <0) || (packet_destination >= _nodes)) {
         ostringstream err;
         err << "Incorrect packet destination " << packet_destination
             << " for stype " << packet_type;
         Error( err.str( ) );
     }
-
     if ( ( _sim_state == running ) ||
          ( ( _sim_state == draining ) && ( time < _drain_time ) ) ) {
         record = _measure_stats[cl];
@@ -851,7 +869,6 @@ void TrafficManager::_GeneratePacket( int source, int stype,
                    << " at time " << time
                    << "." << endl;
     }
-  
     for ( int i = 0; i < size; ++i ) {
         Flit * f  = Flit::New();
         f->id     = _cur_id++;
@@ -863,7 +880,6 @@ void TrafficManager::_GeneratePacket( int source, int stype,
         f->ctime  = time;
         f->record = record;
         f->cl     = cl;
-
         _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
         if(record) {
             _measured_in_flight_flits[f->cl].insert(make_pair(f->id, f));
@@ -873,7 +889,6 @@ void TrafficManager::_GeneratePacket( int source, int stype,
             cout<<"New Flit "<<f->src<<endl;
         }
         f->type = packet_type;
-
         if ( i == 0 ) { // Head flit
             f->head = true;
             //packets are only generated to nodes smaller or equal to limit
@@ -920,32 +935,43 @@ void TrafficManager::_GeneratePacket( int source, int stype,
 }
 
 void TrafficManager::_Inject(){
-
+    // for ( int input : _input_node_location) {
     for ( int input = 0; input < _nodes; ++input ) {
         for ( int c = 0; c < _classes; ++c ) {
             // Potentially generate packets for any (input,class)
             // that is currently empty
-            if ( _partial_packets[input][c].empty() ) {
-                bool generated = false;
-                while( !generated && ( _qtime[input][c] <= _time ) ) {
-                    int stype = _IssuePacket( input, c );
-	  
-                    if ( stype != 0 ) { //generate a packet
-                        _GeneratePacket( input, stype, c, 
-                                         _include_queuing==1 ? 
-                                         _qtime[input][c] : _time );
-                        generated = true;
+            // cout<<input<<endl;
+            if (find(_input_node_location.begin(), _input_node_location.end(), input) != _input_node_location.end()){
+                if ( _partial_packets[input][c].empty() ) {
+                    bool generated = false;
+                    while( !generated ) {
+                        int stype = _IssuePacket( input, c );
+                        if ( stype != 0 ) { //generate a packet
+                                for(int cur_node=0; cur_node < _cur_node_location.size() ;cur_node++ ){
+                                    _GeneratePacket( input, stype, c, 
+                                                    _include_queuing==1 ? 
+                                                    _qtime[input][c] : _time ,cur_node);
+                                }
+                                generated = true;
+                                cout<<"end_gen_packet"<<endl;
+                        }
+                        
+                        // only advance time if this is not a reply packet
+                        if(!_use_read_write[c] || (stype >= 0)){
+                            ++_qtime[input][c];
+                        }
+                        
                     }
-                    // only advance time if this is not a reply packet
-                    if(!_use_read_write[c] || (stype >= 0)){
-                        ++_qtime[input][c];
+            
+        
+                    if ( ( _sim_state == draining ) && 
+                        ( _qtime[input][c] > _drain_time ) ) {
+                        _qdrained[input][c] = true;
                     }
                 }
-	
-                if ( ( _sim_state == draining ) && 
-                     ( _qtime[input][c] > _drain_time ) ) {
-                    _qdrained[input][c] = true;
-                }
+            }
+            else{
+                _qdrained[input][c] = true;
             }
         }
     }
@@ -1279,7 +1305,6 @@ bool TrafficManager::_PacketsOutstanding( ) const
     for ( int c = 0; c < _classes; ++c ) {
         if ( _measure_stats[c] ) {
             if ( _measured_in_flight_flits[c].empty() ) {
-	
                 for ( int s = 0; s < _nodes; ++s ) {
                     if ( !_qdrained[s][c] ) {
 #ifdef DEBUG_DRAIN

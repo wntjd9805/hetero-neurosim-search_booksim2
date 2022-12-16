@@ -171,4 +171,11 @@ public:
   virtual int dest(int source);
 };
 
+class FlowTrafficPattern : public RandomTrafficPattern{
+public:
+  FlowTrafficPattern(int nodes);
+  virtual int dest(int source);
+};
+
+
 #endif

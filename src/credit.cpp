@@ -32,7 +32,8 @@
 
 #include "booksim.hpp"
 #include "credit.hpp"
-
+#include <iostream>
+#include <algorithm>
 stack<Credit *> Credit::_all;
 stack<Credit *> Credit::_free;
 

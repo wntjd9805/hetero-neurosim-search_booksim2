@@ -63,7 +63,7 @@ protected:
 
 public:
 
-  BatchTrafficManager( const Configuration &config, const vector<Network *> & net );
+  BatchTrafficManager( const Configuration &config, const vector<Network *> & net ,vector<string> input_node_name, vector<int> input_node_location, vector<int> cur_node_location, int input_activation_size, float injection_rate);
   virtual ~BatchTrafficManager( );
 
   virtual void WriteStats( ostream & os = cout ) const;

@@ -40,8 +40,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
-
-
+#include <cmath>
+#include <string>
+#include <map>
 
 #include <sstream>
 #include "booksim.hpp"
@@ -55,7 +56,7 @@
 #include "power_module.hpp"
 
 
-
+using namespace std;
 ///////////////////////////////////////////////////////////////////////////////
 //Global declarations
 //////////////////////
@@ -91,10 +92,47 @@ bool gTrace;
 ostream * gWatchOut;
 
 
+//Neurosim
+int _k;
+int _n;
+int _flit_size;
+int _header_size;
+map<int,int> node_per_layer;
+map<string,int> neurosim_map1;
+map<string,int> neurosim_map2;
+map<string,string> node_op;
+map<string,int> node_loaction;
+map<int,string> node_type;
+map<string,int> activation_size;
+map<int,float> injection_rate;
+map<int,int> col;
+map<int,vector<string>> input_node;
 
+map<string,vector<int>> neurosim_map_small;
+map<string,float> activation_size_small_send;
+map<string,float> injection_rate_small_send;
+
+map<string,float> activation_size_small_receive;
+map<string,float> injection_rate_small_receive;
+/////////////////////////////////////////////////////////////////////////////
+vector<string> split(string input, char delimiter) {
+    vector<string> result;
+    stringstream ss(input);
+    string tmp;
+ 
+    while (getline(ss, tmp, delimiter)) result.push_back(tmp);
+ 
+    return result;
+}
+void print_vector(std::vector<int> const &input)
+{
+    for (int i = 0; i < input.size(); i++) {
+        std::cout << input.at(i) << ' ';
+    }
+}
 /////////////////////////////////////////////////////////////////////////////
 
-bool Simulate( BookSimConfig const & config )
+bool Simulate( BookSimConfig const & config ,vector<string> input_node_name, vector<int> input_node_location, vector<int> cur_node_location, int input_activation_size, float inject) 
 {
   vector<Network *> net;
 
@@ -106,7 +144,7 @@ bool Simulate( BookSimConfig const & config )
   for (int i = 0; i < subnets; ++i) {
     ostringstream name;
     name << "network_" << i;
-    net[i] = Network::New( config, name.str() );
+    net[i] = Network::New( config, name.str());
   }
 
   /*tcc and characterize are legacy
@@ -114,7 +152,7 @@ bool Simulate( BookSimConfig const & config )
    */
 
   assert(trafficManager == NULL);
-  trafficManager = TrafficManager::New( config, net ) ;
+  trafficManager = TrafficManager::New( config, net , input_node_name , input_node_location, cur_node_location, input_activation_size, inject) ;
 
   /*Start the simulation run
    */
@@ -125,7 +163,6 @@ bool Simulate( BookSimConfig const & config )
   gettimeofday(&start_time, NULL);
 
   bool result = trafficManager->Run() ;
-
 
   gettimeofday(&end_time, NULL);
   total_time = ((double)(end_time.tv_sec) + (double)(end_time.tv_usec)/1000000.0)
@@ -143,7 +180,7 @@ bool Simulate( BookSimConfig const & config )
 
     delete net[i];
   }
-
+  
   delete trafficManager;
   trafficManager = NULL;
 
@@ -155,7 +192,6 @@ int main( int argc, char **argv )
 {
 
   BookSimConfig config;
-
 
   if ( !ParseArgs( &config, argc, argv ) ) {
     cerr << "Usage: " << argv[0] << " configfile... [param=value...]" << endl;
@@ -179,9 +215,185 @@ int main( int argc, char **argv )
     gWatchOut = new ofstream(watch_out_file.c_str());
   }
   
+  BookSimConfig config_small;
+  config_small = config;
+  config_small.Assign("k",4);
+  
+  _k =config.GetInt("k");
+  _n =config.GetInt("n");
+  _header_size=config.GetInt("header_size");
+  _flit_size=config.GetInt("flit_size");
 
+
+
+  //Neurosim
+  string mapping_file_path = config.GetStr("Neurosim_mapping_file");
+  if( mapping_file_path.empty() && config.GetStr("traffic") == "neurosim") {
+      assert("Neurosim mode but there is no Neurosim mapping file");
+  }else if(config.GetStr("traffic") == "neurosim"){
+  // read File
+      ifstream openFile(mapping_file_path.data());
+      if( openFile.is_open() ){
+          string line;
+          while(getline(openFile, line)){
+              line.insert(line.length(),",");
+              std::string delimiter = ",";
+              vector<std::string> tok{};
+              size_t pos = 0;
+              while((pos = line.find(delimiter))!= string::npos ){
+                  tok.push_back(line.substr(0,pos));
+                  line.erase(0,pos+delimiter.length());
+              }
+              if(tok[0] != "node"){
+                  
+                  if(node_per_layer.find(stoi(tok[0])) == node_per_layer.end()){
+                      node_per_layer[stoi(tok[0])] = 1;
+                  }else{
+                      node_per_layer[stoi(tok[0])] += 1;
+                  }
+                  int tok0 = stoi(tok[0]);
+                  tok[0] = tok[0] + '_' + to_string(node_per_layer[stoi(tok[0])] );
+                  if(tok[1] != ""){
+                      if(input_node.find(stoi(tok[1])) == input_node.end()){
+                        input_node[stoi(tok[1])] = {tok[0]};
+                      }else{
+                        input_node[stoi(tok[1])].push_back(tok[0]);
+                      }
+                      neurosim_map1[tok[0]]=stoi(tok[1]);
+                  }
+                  if(tok[2] != ""){
+                      if(input_node.find(stoi(tok[2])) == input_node.end()){
+                        input_node[stoi(tok[2])] = {tok[0]};
+                      }else{
+                        input_node[stoi(tok[2])].push_back(tok[0]);
+                      }
+                      neurosim_map2[tok[0]]=stoi(tok[2]);
+                  }
+                  
+                  node_op[tok[0]] = tok[3];
+                  vector<std::string> tok_loc = split(tok[4], '-');
+                  node_loaction[tok[0]] = stoi(tok_loc[0]) * _k +  stoi(tok_loc[1]);
+                  node_type[stoi(tok[0])] = tok[5];
+                  activation_size[tok[0]] = stoi(tok[6]) ;
+                  // activation_size[tok[0]] = ceil(pkt_size / _flit_size);
+                  injection_rate[tok0] = stof(tok[7]);
+                  col[tok0] = stoi(tok[9]);
+              }
+          }
+          openFile.close();
+      }
+
+      ifstream openFile_small(config.GetStr("Neurosim_mapping_file_small").data());
+      if( openFile_small.is_open() ){
+          string line;
+          while(getline(openFile_small, line)){
+            line.insert(line.length(),",");
+            std::string delimiter = ",";
+            vector<std::string> tok_small{};
+            size_t pos = 0;
+            while((pos = line.find(delimiter))!= string::npos ){
+                tok_small.push_back(line.substr(0,pos));
+                line.erase(0,pos+delimiter.length());
+            }
+            
+            cout<<tok_small<<endl;
+            if(tok_small[0] != "node"){
+              //neurosimmap
+              std::string newstr1 = tok_small[1].substr(1,tok_small[1].length()-2);
+              istringstream iss(newstr1);
+              char separator = ' ';
+              std::string str_buf;
+              while (getline(iss, str_buf, separator)) {
+                if(str_buf != "\0"){
+                  if(std::stoi(str_buf)>0){
+                    neurosim_map_small[tok_small[0]].push_back(std::stoi(str_buf)); 
+                  }
+                }
+              }
+              
+              activation_size_small_send[tok_small[0]]= stoi(tok_small[2]);
+              injection_rate_small_send[tok_small[0]]= stof(tok_small[3]);
+              activation_size_small_receive[tok_small[0]]= stoi(tok_small[4]);
+              injection_rate_small_receive[tok_small[0]]= stof(tok_small[5]);
+           }
+          }
+
+      }
+  }
+
+  
   /*configure and run the simulator
    */
-  bool result = Simulate( config );
-  return result ? -1 : 0;
+
+  map<int,int>::iterator iter;
+  int i = 0;
+  for(iter = node_per_layer.begin() ; iter != node_per_layer.end() ; iter++){
+    int node = iter->first;
+    if(node == stoi(argv[argc-1])){
+      // cout << "node" <<node <<endl;
+      // cout << "argv" <<argv[argc-1] <<endl;
+      vector<int> input_location= {};
+      int input_activation;
+      float inject;
+      for(string i : input_node.find(node)->second){
+        input_location.push_back( node_loaction.find(i)->second );
+      }
+      vector<int> cur_node_location= {};
+      for(int i=1; i < iter->second+1 ;i++){
+        cur_node_location.push_back(node_loaction.find(to_string(node)+"_"+to_string(i))->second);
+        input_activation = ceil((activation_size.find(to_string(node)+"_"+to_string(i))->second+ _header_size)/_flit_size);
+      }
+      inject = injection_rate.find(node)->second;
+      
+      
+      cout<<"-------"<<endl;
+      cout<<node_type.find(node)->second<<endl;
+      // cout<<node<<endl;
+      cout<<input_location<<endl;
+      // cout<<input_activation<<endl;
+      cout<<cur_node_location<<endl;
+      cout<<inject<<endl;
+      
+      // Simulate(config, input_node.find(node)->second, input_location ,cur_node_location,input_activation,inject);
+
+
+      // if(node_type.find(node)->second=="small"){
+      //   vector<string> input_node_small = {"0"};
+      //   vector<int> input_location_small= {0};
+      //   vector<int> cur_node_location_small= neurosim_map_small.find(to_string(node)+"_0")->second;
+      //   int input_activation_small =  ceil(activation_size_small_send.find(to_string(node)+"_0")->second/_flit_size);
+      //   float inject_small= injection_rate_small_send.find(to_string(node)+"_0")->second; 
+      //   print_vector(cur_node_location_small);
+      //   InitializeRoutingMap( config_small );
+      //   Simulate(config_small, input_node_small , input_location_small ,cur_node_location_small,input_activation_small,inject_small);
+      // }
+      cout<<"-------"<<endl;
+      if(node_type.find(node)->second=="small"){
+        vector<string> input_node_small = {};
+        vector<int>::iterator ptr;
+        for (ptr = neurosim_map_small.find(to_string(node)+"_0")->second.begin(); ptr != neurosim_map_small.find(to_string(node)+"_0")->second.end(); ++ptr)
+        {
+          input_node_small.push_back(to_string(*ptr));
+        }
+        vector<int> input_location_small= neurosim_map_small.find(to_string(node)+"_0")->second;
+        vector<int> cur_node_location_small= {0};
+        int input_activation_small =  ceil(activation_size_small_receive.find(to_string(node)+"_0")->second/_flit_size);
+        float inject_small= injection_rate_small_receive.find(to_string(node)+"_0")->second; 
+        cout<<input_activation_small<<endl;;
+        cout<<inject_small<<endl;
+        print_vector(cur_node_location_small);
+        InitializeRoutingMap( config_small );
+        Simulate(config_small, input_node_small , input_location_small ,cur_node_location_small,input_activation_small,inject_small);
+      }
+      
+
+      
+      // cout << "result" <<result <<endl;
+      // return result ? -1 : 0;
+
+      return 0;
+    }
+    
+  }
+  
 }

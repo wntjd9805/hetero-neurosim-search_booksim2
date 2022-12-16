@@ -54,6 +54,12 @@ BookSimConfig::BookSimConfig( )
   _int_map["c"] = 1; //concentration
   AddStrField( "routing_function", "none" );
 
+
+
+  //flit and header size
+  _int_map["header_size"] = 16;
+  _int_map["flit_size"] = 32;
+
   //simulator tries to correclty adjust latency for node/router placement 
   _int_map["use_noc_latency"] = 1;
 
@@ -240,7 +246,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["pair_stats"] = 0;
 
   // if avg. latency exceeds the threshold, assume unstable
-  _float_map["latency_thres"] = 500.0;
+  _float_map["latency_thres"] = 20000000000000.0;
   AddStrField("latency_thres", ""); // workaround to allow for vector specification
 
    // consider warmed up once relative change in latency / throughput between successive iterations is smaller than this
@@ -283,7 +289,8 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_transactions", "");
 
   AddStrField("watch_out", "");
-
+  AddStrField("Neurosim_mapping_file", "");
+  AddStrField("Neurosim_mapping_file_small", "");
   AddStrField("stats_out", "");
 
 #ifdef TRACK_FLOWS

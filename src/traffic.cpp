@@ -30,6 +30,8 @@
 #include <ctime>
 #include "random_utils.hpp"
 #include "traffic.hpp"
+#include "trafficmanager.hpp"
+
 
 TrafficPattern::TrafficPattern(int nodes)
 : _nodes(nodes)
@@ -91,7 +93,10 @@ TrafficPattern * TrafficPattern::New(string const & pattern, int nodes,
       perm_seed = atoi(params[0].c_str());
     }
     result = new RandomPermutationTrafficPattern(nodes, perm_seed);
-  } else if(pattern_name == "uniform") {
+  } else if(pattern_name == "neurosim") {
+    result = new FlowTrafficPattern(nodes);
+  }
+    else if(pattern_name == "uniform") {
     result = new UniformRandomTrafficPattern(nodes);
   } else if(pattern_name == "background") {
     vector<int> excludes = tokenize_int(params[0]);
@@ -523,4 +528,16 @@ int HotSpotTrafficPattern::dest(int source)
   }
   assert(_rates.back() > pct);
   return _hotspots.back();
+}
+
+
+FlowTrafficPattern::FlowTrafficPattern(int nodes)
+  : RandomTrafficPattern(nodes)
+{
+
+}
+
+int FlowTrafficPattern::dest(int source)
+{
+  assert((source >= 0) && (source < _nodes));
 }

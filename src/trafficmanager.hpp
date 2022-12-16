@@ -67,7 +67,7 @@ protected:
 
   int    _classes;
 
-  vector<double> _load;
+  vector<float> _load;
 
   vector<int> _use_read_write;
   vector<double> _write_fraction;
@@ -183,6 +183,14 @@ protected:
   vector<double> _overall_avg_accepted;
   vector<double> _overall_max_accepted;
 
+  //For neurosim
+  vector<string> _input_node_name;
+  vector<int> _input_node_location;
+  vector<int> _cur_node_location;
+  map<int,int> _input_activation_size;
+  string _topology;
+
+
 #ifdef TRACK_STALLS
   vector<vector<int> > _buffer_busy_stalls;
   vector<vector<int> > _buffer_conflict_stalls;
@@ -270,7 +278,8 @@ protected:
   bool _PacketsOutstanding( ) const;
   
   virtual int  _IssuePacket( int source, int cl );
-  void _GeneratePacket( int source, int size, int cl, int time );
+  void _GeneratePacket( int source, int size, int cl, int time,int cur_node );
+
 
   virtual void _ClearStats( );
 
@@ -292,9 +301,9 @@ protected:
 public:
 
   static TrafficManager * New(Configuration const & config, 
-			      vector<Network *> const & net);
+			      vector<Network *> const & net,vector<string> input_node_name, vector<int> input_node_location, vector<int> cur_node_location, int input_activation_size, float injection_rate);
 
-  TrafficManager( const Configuration &config, const vector<Network *> & net );
+  TrafficManager( const Configuration &config, const vector<Network *> & net ,vector<string> input_node_name, vector<int> input_node_location, vector<int> cur_node_location, int input_activation_size, float injection_rate);
   virtual ~TrafficManager( );
 
   bool Run( );
@@ -307,6 +316,8 @@ public:
 
   inline int getTime() { return _time;}
   Stats * getStats(const string & name) { return _stats[name]; }
+
+
 
 };
 
