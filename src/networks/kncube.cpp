@@ -116,7 +116,9 @@ void KNCube::_BuildNet( const Configuration &config )
       //
 
       // torus channel is longer due to wrap around
-      int latency = _mesh ? 1 : 2 ;
+      // int latency = _mesh ? 1 : 2 ;
+      int latency = config.GetInt( "latency_per_flit" );
+      cout<<"latency_per_flit"<<latency<<endl;
 
       //get the input channel number
       right_input = _LeftChannel( right_node, dim );

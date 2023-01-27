@@ -69,3 +69,4 @@ sample_period = 1;
 sim_power = 0;
 Neurosim_mapping_file = /DNN_NeuroSim_V1.3/Inference_pytorch/BIG_ResNet50.txt;
 Neurosim_mapping_file_small  = /DNN_NeuroSim_V1.3/Inference_pytorch/SMALL_ResNet50.txt;
+latency_per_flit = 4;

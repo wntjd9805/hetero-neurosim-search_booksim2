@@ -291,6 +291,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_out", "");
   AddStrField("Neurosim_mapping_file", "");
   AddStrField("Neurosim_mapping_file_small", "");
+  _int_map["latency_per_flit"] = 1;
   AddStrField("stats_out", "");
 
 #ifdef TRACK_FLOWS
