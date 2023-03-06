@@ -58,7 +58,7 @@ internal_speedup  = 1.0;
 subnets = 1;
 // Traffic
 traffic = neurosim;
-packet_size = 100;
+packet_size = 1;
 
 
 // Simulation
@@ -66,7 +66,7 @@ sim_type = latency;
 
 injection_rate = 0.005;
 sample_period = 1;
-sim_power = 0;
-Neurosim_mapping_file = /DNN_NeuroSim_V1.3/Inference_pytorch/BIG_ResNet50.txt;
-Neurosim_mapping_file_small  = /DNN_NeuroSim_V1.3/Inference_pytorch/SMALL_ResNet50.txt;
+sim_power = 1;
+tech_file = /root/neurosim/booksim2/src/power/techfile.txt;
 latency_per_flit = 4;
+watch_out = -;

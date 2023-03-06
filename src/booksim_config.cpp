@@ -291,6 +291,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_out", "");
   AddStrField("Neurosim_mapping_file", "");
   AddStrField("Neurosim_mapping_file_small", "");
+  _float_map["wire_length_tile"] = 0;
   _int_map["latency_per_flit"] = 1;
   AddStrField("stats_out", "");
 
@@ -352,6 +353,5 @@ PowerConfig::PowerConfig( )
   _float_map["Rw"] = 0;
   _float_map["Cw_gnd"] = 0;
   _float_map["Cw_cpl"] = 0;
-  _float_map["wire_length"] = 0;
-
+  // _float_map["wire_length"] = 0;
 }

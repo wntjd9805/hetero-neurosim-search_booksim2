@@ -229,7 +229,7 @@ bool ParseArgs(Configuration * cf, int argc, char * * argv)
   bool rc = false;
 
   //all dashed variables are ignored by the arg parser
-  for(int i = 1; i < argc-2; ++i) {
+  for(int i = 1; i < argc-13; ++i) {
     string arg(argv[i]);
     size_t pos = arg.find('=');
     bool dash = (argv[i][0] =='-');

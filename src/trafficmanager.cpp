@@ -807,9 +807,9 @@ void TrafficManager::_GeneratePacket( int source, int stype,
     int packet_destination = _traffic_pattern[cl]->dest(source);
     if(_traffic[cl] == "neurosim"){
         packet_destination = _cur_node_location[cur_node];
-        cout<< "size" << size << endl;
-        cout<< "source" << source << endl;
-        cout<< "packet_destination" << packet_destination << endl;
+        // cout<< "size" << size << endl;
+        // cout<< "source" << source << endl;
+        // cout<< "packet_destination" << packet_destination << endl;
     }
 
     bool record = false;

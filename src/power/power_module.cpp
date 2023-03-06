@@ -50,7 +50,7 @@ Power_Module::Power_Module(Network * n , const Configuration &config)
 
   //////////////////////////////////Constants/////////////////////////////
   //wire length in (mm)
-  wire_length = pconfig.GetFloat("wire_length");
+  wire_length = config.GetFloat("wire_length_tile");
   //////////Metal Parameters////////////
   // Wire left/right coupling capacitance [ F/mm ]
   Cw_cpl = pconfig.GetFloat("Cw_cpl"); 
@@ -514,7 +514,7 @@ void Power_Module::run(){
   cout<< "- Output DFF Power:        "<<outputPower <<"\n" ;
   cout<< "- Output Clk Power:        "<<outputPowerClk <<"\n" ;
   cout<< "- Output Control Power:    "<<outputCtrlPower <<"\n" ;
-  cout<< "- Total Power:             "<<totalpower <<"\n";
+  cout<< "- Total Power: "<<totalpower <<"\n";
   cout<< "-----------------------------------------\n" ;
   cout<< "\n" ;
   cout<< "-----------------------------------------\n" ;
@@ -523,7 +523,7 @@ void Power_Module::run(){
   cout<< "- Switch  Area:  "<<switchArea<<"\n" ;
   cout<< "- Input  Area:   "<<inputArea<<"\n" ;
   cout<< "- Output  Area:  "<<outputArea<<"\n" ;
-  cout<< "- Total Area:    "<<totalarea<<endl;
+  cout<< "- Total Area: "<<totalarea<<endl;
   cout<< "-----------------------------------------\n" ;
 
 
