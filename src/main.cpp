@@ -369,6 +369,7 @@ int main( int argc, char **argv )
       cout<<inject<<endl;
       cout << "type" <<argv[argc-1] <<endl;
       if(stoi(argv[argc-1])==1){//BIG
+        config.Assign("injection_rate",inject);
         InitializeRoutingMap( config );
         Simulate(config, input_node.find(node)->second, input_location ,cur_node_location,input_activation,inject);
       }else if (stoi(argv[argc-1]) == 2){//"SMALL_send"
@@ -381,6 +382,7 @@ int main( int argc, char **argv )
           int input_activation_small =  ceil(activation_size_small_send.find(to_string(node)+"_0")->second/_flit_size);
           float inject_small= injection_rate_small_send.find(to_string(node)+"_0")->second; 
           print_vector(cur_node_location_small);
+          config_small1.Assign("injection_rate",inject_small);
           InitializeRoutingMap( config_small1 );
           Simulate(config_small1, input_node_small , input_location_small ,cur_node_location_small,input_activation_small,inject_small);
         }
@@ -395,6 +397,7 @@ int main( int argc, char **argv )
           int input_activation_small =  ceil(activation_size_small_send.find(to_string(node)+"_0")->second/_flit_size);
           float inject_small= injection_rate_small_send.find(to_string(node)+"_0")->second; 
           print_vector(cur_node_location_small);
+          config_small2.Assign("injection_rate",inject_small);
           InitializeRoutingMap( config_small2 );
           Simulate(config_small2, input_node_small , input_location_small ,cur_node_location_small,input_activation_small,inject_small);
         }
@@ -424,6 +427,7 @@ int main( int argc, char **argv )
          
           print_vector(input_location_small);
           print_vector(cur_node_location_small);
+          config_small1.Assign("injection_rate",inject_small);
           InitializeRoutingMap( config_small1 );
           Simulate(config_small1, input_node_small , input_location_small ,cur_node_location_small,input_activation_small,inject_small);
         }
@@ -443,6 +447,7 @@ int main( int argc, char **argv )
           cout<<input_activation_small<<endl;;
           cout<<inject_small<<endl;
           print_vector(cur_node_location_small);
+          config_small2.Assign("injection_rate",inject_small);
           InitializeRoutingMap( config_small2 );
           Simulate(config_small2, input_node_small , input_location_small ,cur_node_location_small,input_activation_small,inject_small);
         }

@@ -202,9 +202,9 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
 
     // _load = config.GetFloatArray("injection_rate"); 
     // if(_load.empty()) {
-    //     _load.push_back(config.GetFloat("injection_rate"));
+    _load.push_back(config.GetFloat("injection_rate"));
     // }
-    // _load.resize(_classes, _load.back());
+    _load.resize(_classes, _load.back());
 
     // if(config.GetInt("injection_rate_uses_flits")) {
     //     for(int c = 0; c < _classes; ++c)
@@ -216,9 +216,9 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
         _input_activation_size[_input_node_location[i]] = input_activation_size; 
     }
     _cur_node_location = cur_node_location;
-    for(int c = 0; c < _classes; ++c){
-        _load.push_back(injection_rate);
-    }
+    // for(int c = 0; c < _classes; ++c){
+    //     _load.push_back(injection_rate);
+    // }
     
     _traffic = config.GetStrArray("traffic");
     _traffic.resize(_classes, _traffic.back());
