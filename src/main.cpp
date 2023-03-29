@@ -95,7 +95,6 @@ ostream * gWatchOut;
 //Neurosim
 int _k;
 int _n;
-int _flit_size;
 int _header_size;
 map<int,int> node_per_layer;
 map<string,int> neurosim_map1;
@@ -217,25 +216,29 @@ int main( int argc, char **argv )
 
   config.Assign("k",stoi(argv[2]));
   config.Assign("latency_per_flit",stoi(argv[5]));
-  config.Assign("wire_length_tile",stof(argv[10])*1000);
-  
+  // config.Assign("wire_length_tile",stof(argv[10])*1000);
+  // config.Assign("flit_size",stoi(argv[13]));
+  config.Assign("flit_size",stoi(argv[13]));
+  cout<< config.GetInt("flit_size")<<"dfffffffff"<< endl;
 
   BookSimConfig config_small1;
   config_small1 = config;
   config_small1.Assign("k",stoi(argv[3]));
   config_small1.Assign("latency_per_flit",stoi(argv[6]));
-  config_small1.Assign("wire_length_tile",stof(argv[11])*1000);
-
+  // config_small1.Assign("wire_length_tile",stof(argv[11])*1000);
+  config_small1.Assign("flit_size",stoi(argv[14]));
+  
   BookSimConfig config_small2;
   config_small2 = config;
   config_small2.Assign("k",stoi(argv[4]));
   config_small2.Assign("latency_per_flit",stoi(argv[7]));
-  config_small2.Assign("wire_length_tile",stof(argv[12])*1000);
-  
+  // config_small2.Assign("wire_length_tile",stof(argv[12])*1000);
+  config_small2.Assign("flit_size",stoi(argv[15]));
+
   _k =config.GetInt("k");
   _n =config.GetInt("n");
   _header_size=config.GetInt("header_size");
-  _flit_size=config.GetInt("flit_size");
+  // _flit_size=config.GetInt("flit_size");
 
 
 
@@ -354,7 +357,7 @@ int main( int argc, char **argv )
       vector<int> cur_node_location= {};
       for(int i=1; i < iter->second+1 ;i++){
         cur_node_location.push_back(node_loaction.find(to_string(node)+"_"+to_string(i))->second);
-        input_activation = ceil((activation_size.find(to_string(node)+"_"+to_string(i))->second+ _header_size)/_flit_size);
+        input_activation = ceil((activation_size.find(to_string(node)+"_"+to_string(i))->second+ _header_size)/config.GetInt("flit_size"));
         cout<<"activation_size: "<<activation_size.find(to_string(node)+"_"+to_string(i))->second<< endl;  
       }
       inject = injection_rate.find(node)->second;
@@ -379,7 +382,7 @@ int main( int argc, char **argv )
           vector<int> input_location_small= {0};
           vector<int> cur_node_location_small= neurosim_map_small.find(to_string(node)+"_0")->second;
           cur_node_location_small.erase(cur_node_location_small.begin());
-          int input_activation_small =  ceil(activation_size_small_send.find(to_string(node)+"_0")->second/_flit_size);
+          int input_activation_small =  ceil(activation_size_small_send.find(to_string(node)+"_0")->second/config_small1.GetInt("flit_size"));
           float inject_small= injection_rate_small_send.find(to_string(node)+"_0")->second; 
           print_vector(cur_node_location_small);
           config_small1.Assign("injection_rate",inject_small);
@@ -394,7 +397,7 @@ int main( int argc, char **argv )
           vector<int> cur_node_location_small= neurosim_map_small.find(to_string(node)+"_0")->second;
           cur_node_location_small.erase(cur_node_location_small.begin());
           cout << "llll" <<endl;
-          int input_activation_small =  ceil(activation_size_small_send.find(to_string(node)+"_0")->second/_flit_size);
+          int input_activation_small =  ceil(activation_size_small_send.find(to_string(node)+"_0")->second/config_small2.GetInt("flit_size"));
           float inject_small= injection_rate_small_send.find(to_string(node)+"_0")->second; 
           print_vector(cur_node_location_small);
           config_small2.Assign("injection_rate",inject_small);
@@ -420,7 +423,7 @@ int main( int argc, char **argv )
           input_location_small.erase(input_location_small.begin());
           vector<int> cur_node_location_small= {0};
 
-          int input_activation_small =  ceil(activation_size_small_receive.find(to_string(node)+"_0")->second/_flit_size);
+          int input_activation_small =  ceil(activation_size_small_receive.find(to_string(node)+"_0")->second/config_small1.GetInt("flit_size"));
           float inject_small= injection_rate_small_receive.find(to_string(node)+"_0")->second; 
           cout<<input_activation_small<<endl;;
           cout<<inject_small<<endl;
@@ -442,7 +445,7 @@ int main( int argc, char **argv )
           vector<int> input_location_small= neurosim_map_small.find(to_string(node)+"_0")->second;
           input_location_small.erase(input_location_small.begin());
           vector<int> cur_node_location_small= {0};
-          int input_activation_small =  ceil(activation_size_small_receive.find(to_string(node)+"_0")->second/_flit_size);
+          int input_activation_small =  ceil(activation_size_small_receive.find(to_string(node)+"_0")->second/config_small2.GetInt("flit_size"));
           float inject_small= injection_rate_small_receive.find(to_string(node)+"_0")->second; 
           cout<<input_activation_small<<endl;;
           cout<<inject_small<<endl;

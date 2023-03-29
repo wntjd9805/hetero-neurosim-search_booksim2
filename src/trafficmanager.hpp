@@ -188,6 +188,8 @@ protected:
   vector<int> _input_node_location;
   vector<int> _cur_node_location;
   map<int,int> _input_activation_size;
+  int count_flit;
+  bool _remain_packet();
   string _topology;
 
 

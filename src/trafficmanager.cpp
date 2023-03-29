@@ -58,7 +58,7 @@ TrafficManager * TrafficManager::New(Configuration const & config,
 TrafficManager::TrafficManager( const Configuration &config, const vector<Network *> & net ,vector<string> input_node_name, vector<int> input_node_location, vector<int> cur_node_location,int input_activation_size, float injection_rate)
     : Module( 0, "traffic_manager" ), _net(net), _empty_network(false), _deadlock_timer(0), _reset_time(0), _drain_time(-1), _cur_id(0), _cur_pid(0), _time(0)
 {
-
+    count_flit = 0;
     _nodes = _net[0]->NumNodes( );
     _routers = _net[0]->NumRouters( );
 
@@ -152,53 +152,53 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
     }
     _write_reply_size.resize(_classes, _write_reply_size.back());
 
-    // string packet_size_str = config.GetStr("packet_size");
-    // if(packet_size_str.empty()) {
-    //     _packet_size.push_back(vector<int>(1, config.GetInt("packet_size")));
-    // } else {
-    //     vector<string> packet_size_strings = tokenize_str(packet_size_str);
-    //     for(size_t i = 0; i < packet_size_strings.size(); ++i) {
-    //         _packet_size.push_back(tokenize_int(packet_size_strings[i]));
-    //     }
-    // }
-    // _packet_size.resize(_classes, _packet_size.back());
+    string packet_size_str = config.GetStr("packet_size");
+    if(packet_size_str.empty()) {
+        _packet_size.push_back(vector<int>(1, config.GetInt("packet_size")));
+    } else {
+        vector<string> packet_size_strings = tokenize_str(packet_size_str);
+        for(size_t i = 0; i < packet_size_strings.size(); ++i) {
+            _packet_size.push_back(tokenize_int(packet_size_strings[i]));
+        }
+    }
+    _packet_size.resize(_classes, _packet_size.back());
 
-    // string packet_size_rate_str = config.GetStr("packet_size_rate");
-    // if(packet_size_rate_str.empty()) {
-    //     int rate = config.GetInt("packet_size_rate");
-    //     assert(rate >= 0);
-    //     for(int c = 0; c < _classes; ++c) {
-    //         int size = _packet_size[c].size();
-    //         _packet_size_rate.push_back(vector<int>(size, rate));
-    //         _packet_size_max_val.push_back(size * rate - 1);
-    //     }
-    // } else {
-    //     vector<string> packet_size_rate_strings = tokenize_str(packet_size_rate_str);
-    //     packet_size_rate_strings.resize(_classes, packet_size_rate_strings.back());
-    //     for(int c = 0; c < _classes; ++c) {
-    //         vector<int> rates = tokenize_int(packet_size_rate_strings[c]);
-    //         rates.resize(_packet_size[c].size(), rates.back());
-    //         _packet_size_rate.push_back(rates);
-    //         int size = rates.size();
-    //         int max_val = -1;
-    //         for(int i = 0; i < size; ++i) {
-    //             int rate = rates[i];
-    //             assert(rate >= 0);
-    //             max_val += rate;
-    //         }
-    //         _packet_size_max_val.push_back(max_val);
-    //     }
-    // }
+    string packet_size_rate_str = config.GetStr("packet_size_rate");
+    if(packet_size_rate_str.empty()) {
+        int rate = config.GetInt("packet_size_rate");
+        assert(rate >= 0);
+        for(int c = 0; c < _classes; ++c) {
+            int size = _packet_size[c].size();
+            _packet_size_rate.push_back(vector<int>(size, rate));
+            _packet_size_max_val.push_back(size * rate - 1);
+        }
+    } else {
+        vector<string> packet_size_rate_strings = tokenize_str(packet_size_rate_str);
+        packet_size_rate_strings.resize(_classes, packet_size_rate_strings.back());
+        for(int c = 0; c < _classes; ++c) {
+            vector<int> rates = tokenize_int(packet_size_rate_strings[c]);
+            rates.resize(_packet_size[c].size(), rates.back());
+            _packet_size_rate.push_back(rates);
+            int size = rates.size();
+            int max_val = -1;
+            for(int i = 0; i < size; ++i) {
+                int rate = rates[i];
+                assert(rate >= 0);
+                max_val += rate;
+            }
+            _packet_size_max_val.push_back(max_val);
+        }
+    }
   
-    // for(int c = 0; c < _classes; ++c) {
-    //     if(_use_read_write[c]) {
-    //         _packet_size[c] = 
-    //             vector<int>(1, (_read_request_size[c] + _read_reply_size[c] +
-    //                             _write_request_size[c] + _write_reply_size[c]) / 2);
-    //         _packet_size_rate[c] = vector<int>(1, 1);
-    //         _packet_size_max_val[c] = 0;
-    //     }
-    // }
+    for(int c = 0; c < _classes; ++c) {
+        if(_use_read_write[c]) {
+            _packet_size[c] = 
+                vector<int>(1, (_read_request_size[c] + _read_reply_size[c] +
+                                _write_request_size[c] + _write_reply_size[c]) / 2);
+            _packet_size_rate[c] = vector<int>(1, 1);
+            _packet_size_max_val[c] = 0;
+        }
+    }
 
     // _load = config.GetFloatArray("injection_rate"); 
     // if(_load.empty()) {
@@ -797,8 +797,9 @@ void TrafficManager::_GeneratePacket( int source, int stype,
     assert(stype!=0);
 
     Flit::FlitType packet_type = Flit::ANY_TYPE;
+    int size = _GetNextPacketSize(cl); //input size 
     // int size = 4; //input size 
-    int size = _input_activation_size[source];
+    // int size = _input_activation_size[source];
     int pid = _cur_pid++;
     assert(_cur_pid);
 
@@ -931,6 +932,9 @@ void TrafficManager::_GeneratePacket( int source, int stype,
         }
 
         _partial_packets[source][cl].push_back( f );
+        _input_activation_size[source] = _input_activation_size[source] - 1;
+        count_flit = count_flit +1;
+
     }
 }
 
@@ -953,7 +957,7 @@ void TrafficManager::_Inject(){
                                                     _qtime[input][c] : _time ,cur_node);
                                 }
                                 generated = true;
-                                cout<<"end_gen_packet"<<endl;
+                                // cout<<"end_gen_packet"<<endl;
                         }
                         
                         // only advance time if this is not a reply packet
@@ -1030,7 +1034,8 @@ void TrafficManager::_Step( )
         _net[subnet]->ReadInputs( );
     }
   
-    if ( !_empty_network ) {
+    if ( !_empty_network || _remain_packet()) {
+        // cout<<"Inject"<<endl;
         _Inject();
     }
 
@@ -1459,7 +1464,7 @@ bool TrafficManager::_SingleSim( )
     
     
         for ( int iter = 0; iter < _sample_period; ++iter )
-            _Step( );
+            _Step();
     
         //cout << _sim_state << endl;
 
@@ -1633,6 +1638,16 @@ bool TrafficManager::_SingleSim( )
     return ( converged > 0 );
 }
 
+bool TrafficManager::_remain_packet()
+{
+    map<int, int>::iterator it;
+    for (it = _input_activation_size.begin(); it != _input_activation_size.end(); it++) {
+        if (it->second > 0)
+            return true;
+    }
+    return false;
+}
+
 bool TrafficManager::Run( )
 {
     for ( int sim = 0; sim < _total_sims; ++sim ) {
@@ -1682,7 +1697,7 @@ bool TrafficManager::Run( )
             packets_left |= !_total_in_flight_flits[c].empty();
         }
 
-        while( packets_left ) { 
+        while( packets_left || _remain_packet() ) { 
             _Step( ); 
 
             ++empty_steps;
@@ -1705,13 +1720,13 @@ bool TrafficManager::Run( )
         //for the love of god don't ever say "Time taken" anywhere else
         //the power script depend on it
         cout << "Time taken is " << _time << " cycles" <<endl; 
-
+        cout <<"count_flit"<< count_flit << endl;
         if(_stats_out) {
             WriteStats(*_stats_out);
         }
         _UpdateOverallStats();
     }
-  
+    
     DisplayOverallStats();
     if(_print_csv_results) {
         DisplayOverallStatsCSV();
