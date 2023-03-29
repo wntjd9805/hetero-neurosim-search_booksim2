@@ -1697,9 +1697,9 @@ bool TrafficManager::Run( )
             packets_left |= !_total_in_flight_flits[c].empty();
         }
 
-        while( packets_left || _remain_packet() ) { 
+        while( packets_left ) { 
             _Step( ); 
-
+            cout << "step" <<_remain_packet() << endl;
             ++empty_steps;
 
             if ( empty_steps % 1000 == 0 ) {
