@@ -213,6 +213,7 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
     
     _input_node_location = input_node_location;
     for(int i= 0 ; i<_input_node_location.size() ; i++){
+        
         _input_activation_size[_input_node_location[i]] = input_activation_size; 
     }
     _cur_node_location = cur_node_location;
@@ -1035,7 +1036,8 @@ void TrafficManager::_Step( )
     }
   
     if ( !_empty_network || _remain_packet()) {
-        // cout<<"Inject"<<endl;
+         _remain_packet();
+        cout<<"Inject"<<endl;
         _Inject();
     }
 
@@ -1642,8 +1644,10 @@ bool TrafficManager::_remain_packet()
 {
     map<int, int>::iterator it;
     for (it = _input_activation_size.begin(); it != _input_activation_size.end(); it++) {
-        if (it->second > 0)
+        if (it->second > 0){
+            cout << it->second <<" "<<count_flit << endl;
             return true;
+        }
     }
     return false;
 }
