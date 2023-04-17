@@ -213,13 +213,18 @@ int main( int argc, char **argv )
   } else {
     gWatchOut = new ofstream(watch_out_file.c_str());
   }
-
+  int is_anynet = stoi(argv[16]);
   config.Assign("k",stoi(argv[2]));
   config.Assign("latency_per_flit",stoi(argv[5]));
   // config.Assign("wire_length_tile",stof(argv[10])*1000);
   // config.Assign("flit_size",stoi(argv[13]));
   config.Assign("flit_size",stoi(argv[13]));
-  cout<< config.GetInt("flit_size")<<"dfffffffff"<< endl;
+  if(is_anynet){
+    config.Assign("network_file",argv[17]);
+  }
+  
+  
+
 
   BookSimConfig config_small1;
   config_small1 = config;
@@ -241,7 +246,7 @@ int main( int argc, char **argv )
   // _flit_size=config.GetInt("flit_size");
 
 
-
+  
   //Neurosim
   string mapping_file_path = argv[8];
   
@@ -291,6 +296,9 @@ int main( int argc, char **argv )
                   node_op[tok[0]] = tok[3];
                   vector<std::string> tok_loc = split(tok[4], '-');
                   node_loaction[tok[0]] = stoi(tok_loc[0]) * _k +  stoi(tok_loc[1]);
+                  if(is_anynet){
+                    node_loaction[tok[0]] = stoi(tok[10]);
+                  }
                   node_type[stoi(tok[0])] = tok[5];
                   activation_size[tok[0]] = stoi(tok[6]) ;
                   // activation_size[tok[0]] = ceil(pkt_size / _flit_size);
@@ -342,7 +350,6 @@ int main( int argc, char **argv )
   /*configure and run the simulator
    */
   map<int,int>::iterator iter;
-  int i = 0;
   for(iter = node_per_layer.begin() ; iter != node_per_layer.end() ; iter++){
     int node = iter->first;
     if(node == stoi(argv[argc-2])){

@@ -34,17 +34,32 @@ topology = anynet;
 
 routing_function = min;
 network_file = anynet_file;
-traffic = uniform;
+traffic = neurosim;
 
 use_read_write = 0;
 
-sample_period = 10000;
+sample_period = 1;
 injection_rate = 0.01;
 
 
-vc_allocator = separable_input_first; 
-sw_allocator = separable_input_first;
+// Flow control
+num_vcs     = 8;
+vc_buf_size = 8;
+wait_for_tail_credit = 1;
+
+// Router architecture
+vc_allocator = islip;
+sw_allocator = islip;
 alloc_iters  = 1;
 
-num_vcs     = 1;
-vc_buf_size = 3;
+credit_delay   = 2;
+routing_delay  = 0;
+vc_alloc_delay = 1;
+sw_alloc_delay = 1;
+
+input_speedup     = 2;
+output_speedup    = 1;
+internal_speedup  = 1.0;
+
+packet_size = 1;
+sim_type = latency;

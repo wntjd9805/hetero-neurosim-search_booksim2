@@ -363,10 +363,10 @@ void AnyNet::readFile(){
     do{
 
       //skip empty spaces
-      next_pos = line.find(" ",pos);
+      next_pos = line.find(",",pos);
       temp = line.substr(pos,next_pos-pos);
       pos = next_pos+1;
-      if(temp=="" || temp==" "){
+      if(temp=="" || temp==","){
 	continue;
       }
 
