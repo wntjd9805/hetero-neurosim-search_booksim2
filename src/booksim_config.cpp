@@ -330,14 +330,14 @@ BookSimConfig::BookSimConfig( )
 PowerConfig::PowerConfig( )
 { 
 
-  _int_map["H_INVD2"] = 0;
-  _int_map["W_INVD2"] = 0;
-  _int_map["H_DFQD1"] = 0;
-  _int_map["W_DFQD1"] = 0;
-  _int_map["H_ND2D1"] = 0;
-  _int_map["W_ND2D1"] = 0;
-  _int_map["H_SRAM"] = 0;
-  _int_map["W_SRAM"] = 0;
+  _float_map["H_INVD2"] = 0;
+  _float_map["W_INVD2"] = 0;
+  _float_map["H_DFQD1"] = 0;
+  _float_map["W_DFQD1"] = 0;
+  _float_map["H_ND2D1"] = 0;
+  _float_map["W_ND2D1"] = 0;
+  _float_map["H_SRAM"] = 0;
+  _float_map["W_SRAM"] = 0;
   _float_map["Vdd"] = 0;
   _float_map["R"] = 0;
   _float_map["IoffSRAM"] = 0;

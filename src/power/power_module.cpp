@@ -51,12 +51,14 @@ Power_Module::Power_Module(Network * n , const Configuration &config)
   //////////////////////////////////Constants/////////////////////////////
   //wire length in (mm)
   wire_length = config.GetFloat("wire_length_tile");
+ 
   //////////Metal Parameters////////////
   // Wire left/right coupling capacitance [ F/mm ]
-  Cw_cpl = pconfig.GetFloat("Cw_cpl"); 
+  // Cw_cpl = pconfig.GetFloat("Cw_cpl"); 
   // Wire up/down groudn capacitance      [ F/mm ]
   Cw_gnd = pconfig.GetFloat("Cw_gnd");
-  Cw = 2.0 * Cw_cpl + 2.0 * Cw_gnd ;
+  Cw = 2.0 * Cw_gnd ; //wire capacitance
+  // Cw = 0.2e-12;
   Rw = pconfig.GetFloat("Rw");
   // metal pitch [mm]
   MetalPitch = pconfig.GetFloat("MetalPitch"); 
@@ -88,17 +90,18 @@ Power_Module::Power_Module(Network * n , const Configuration &config)
 
   Vdd    = pconfig.GetFloat("Vdd");
   FO4    = R * ( 3.0 * Cd + 12 * Cg + 12 * Cgdl);		     
-  tCLK   = 20 * FO4;
+  tCLK   = 20 * FO4 ;
+  // tCLK = 0.1e-9;
+  cout<< "FO4: " <<FO4 <<endl;
   fCLK   = 1.0 / tCLK;              
-
-  H_INVD2=(double)pconfig.GetInt("H_INVD2");
-  W_INVD2=(double)pconfig.GetInt("W_INVD2") ;
-  H_DFQD1=(double)pconfig.GetInt("H_DFQD1");
-  W_DFQD1= (double)pconfig.GetInt("W_DFQD1");
-  H_ND2D1= (double)pconfig.GetInt("H_ND2D1");
-  W_ND2D1=(double)pconfig.GetInt("W_ND2D1");
-  H_SRAM=(double)pconfig.GetInt("H_SRAM");
-  W_SRAM=(double)pconfig.GetInt("W_SRAM");
+  H_INVD2=(double)pconfig.GetFloat("H_INVD2");
+  W_INVD2=(double)pconfig.GetFloat("W_INVD2") ;
+  H_DFQD1=(double)pconfig.GetFloat("H_DFQD1");
+  W_DFQD1= (double)pconfig.GetFloat("W_DFQD1");
+  H_ND2D1= (double)pconfig.GetFloat("H_ND2D1");
+  W_ND2D1=(double)pconfig.GetFloat("W_ND2D1");
+  H_SRAM=(double)pconfig.GetFloat("H_SRAM");
+  W_SRAM=(double)pconfig.GetFloat("W_SRAM");
 
   ChannelPitch = 2.0 * MetalPitch ;
   CrossbarPitch = 2.0 * MetalPitch ;
@@ -115,7 +118,7 @@ Power_Module::~Power_Module(){
 //////////////////////////////////////////////
 
 void Power_Module::calcChannel(const FlitChannel* f){
-  double channelLength = f->GetLatency()* wire_length;
+  double channelLength = wire_length;
   wire const this_wire = wireOptimize(channelLength);
   double const & K = this_wire.K;
   double const & N = this_wire.N;
@@ -202,9 +205,9 @@ double Power_Module:: powerWireClk (double M, double W){
   double columns = H_DFQD1 * MetalPitch /  ChannelPitch ;
 
   // length of clock wire
-  double clockLength = W * ChannelPitch ;
-  double Cclk = (1 + 5.0/16.0 * (1+Co_delay/Ci_delay)) * (clockLength * Cw * columns +W * Ci_delay);
-
+  double clockLength = 1 * ChannelPitch ;
+  double Cclk = (1 + 5.0/16.0 * (1+Co_delay/Ci_delay)) * (clockLength * Cw * columns +1 * Ci_delay);
+  
   return M * Cclk * (Vdd * Vdd) * fCLK ;
 
 }
@@ -391,8 +394,8 @@ double Power_Module::powerCrossbarCtrl(double width, double inputs, double outpu
 
 double Power_Module::powerCrossbarLeak (double width, double inputs, double outputs){
   // datapath traversal power
-    double Wxbar = width * outputs * CrossbarPitch ;
-    double Hxbar = width * inputs  * CrossbarPitch ;
+    double Wxbar = width * CrossbarPitch ;
+    double Hxbar = width * CrossbarPitch ;
 
     // wires
     double CwIn  = Wxbar * Cw ;
@@ -471,14 +474,15 @@ void Power_Module::run(){
   vector<FlitChannel *> eject = net->GetEject();
   vector<FlitChannel *> chan = net->GetChannels();
   
+  cout<<"inject"<<endl;
   for(int i = 0; i<net->NumNodes(); i++){
     calcChannel(inject[i]);
   }
-
+  cout<<"eject"<<endl;
   for(int i = 0; i<net->NumNodes(); i++){
     calcChannel(eject[i]);
   }
-
+  cout<<"chan: "<<net->NumChannels()<<endl;
   for(int i = 0; i<net->NumChannels();i++){
     calcChannel(chan[i]);
   }
@@ -492,7 +496,7 @@ void Power_Module::run(){
     calcSwitch(sm);
   }
   
-  double totalpower =  channelWirePower+channelClkPower+channelDFFPower+channelLeakPower+ inputReadPower+inputWritePower+inputLeakagePower+ switchPower+switchPowerCtrl+switchPowerLeak+outputPower+outputPowerClk+outputCtrlPower;
+  double totalpower =  channelWirePower+channelClkPower+channelDFFPower+ inputReadPower+inputWritePower+ switchPower+switchPowerCtrl +outputPower+outputPowerClk+outputCtrlPower;
   double totalarea =  channelArea+switchArea+inputArea+outputArea;
   cout<< "-----------------------------------------\n" ;
   cout<< "- OCN Power Summary\n" ;
@@ -525,6 +529,7 @@ void Power_Module::run(){
   cout<< "- Output  Area:  "<<outputArea<<"\n" ;
   cout<< "- Total Area: "<<totalarea<<endl;
   cout<< "-----------------------------------------\n" ;
+  cout<< "- Total leak Power: "<<inputLeakagePower+switchPowerLeak+channelLeakPower <<"\n";
 
 
 

@@ -216,7 +216,7 @@ int main( int argc, char **argv )
   int is_anynet = stoi(argv[16]);
   config.Assign("k",stoi(argv[2]));
   config.Assign("latency_per_flit",stoi(argv[5]));
-  // config.Assign("wire_length_tile",stof(argv[10])*1000);
+  config.Assign("wire_length_tile",stof(argv[10])*1000);
   // config.Assign("flit_size",stoi(argv[13]));
   config.Assign("flit_size",stoi(argv[13]));
   if(is_anynet){
@@ -230,14 +230,14 @@ int main( int argc, char **argv )
   config_small1 = config;
   config_small1.Assign("k",stoi(argv[3]));
   config_small1.Assign("latency_per_flit",stoi(argv[6]));
-  // config_small1.Assign("wire_length_tile",stof(argv[11])*1000);
+  config_small1.Assign("wire_length_tile",stof(argv[11])*1000);
   config_small1.Assign("flit_size",stoi(argv[14]));
   
   BookSimConfig config_small2;
   config_small2 = config;
   config_small2.Assign("k",stoi(argv[4]));
   config_small2.Assign("latency_per_flit",stoi(argv[7]));
-  // config_small2.Assign("wire_length_tile",stof(argv[12])*1000);
+  config_small2.Assign("wire_length_tile",stof(argv[12])*1000);
   config_small2.Assign("flit_size",stoi(argv[15]));
 
   _k =config.GetInt("k");
@@ -415,6 +415,7 @@ int main( int argc, char **argv )
           cout<< "Time taken is " << 0 << " cycles"<< endl;
           cout<< "- Total Power: " << 0 << endl;
           cout<< "- Total Area: " << 0 << endl;
+          cout<< "- Total leak Power: " << 0 << endl;
         }
       }else if (stoi(argv[argc-1]) == 3){//""SMALL_receive""
         if(node_type.find(node)->second=="chip1" && config_small1.GetInt("k")!=1 ){
@@ -465,6 +466,8 @@ int main( int argc, char **argv )
           cout<< "Time taken is " << 0 << " cycles"<< endl;
           cout<< "- Total Power: " << 0 << endl;
           cout<< "- Total Area: " << 0 << endl;
+          cout<< "- Total leak Power: " << 0 << endl;
+
         }
       }
       
