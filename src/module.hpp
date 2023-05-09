@@ -7,7 +7,7 @@
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
 
- Redistributions of source code must retain the above copyright notice, this 
+ Redistributions of source code must retain the above copyright notice, this
  list of conditions and the following disclaimer.
  Redistributions in binary form must reproduce the above copyright notice, this
  list of conditions and the following disclaimer in the documentation and/or
@@ -15,7 +15,7 @@
 
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -30,9 +30,9 @@
 
 #include "booksim.hpp"
 
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 class Module {
 private:
@@ -42,21 +42,21 @@ private:
   vector<Module *> _children;
 
 protected:
-  void _AddChild( Module *child );
+  void _AddChild(Module *child);
 
 public:
-  Module( Module *parent, const string& name );
-  virtual ~Module( ) { }
-  
-  inline const string & Name() const { return _name; }
-  inline const string & FullName() const { return _fullname; }
+  Module(Module *parent, const string &name);
+  virtual ~Module() {}
 
-  void DisplayHierarchy( int level = 0, ostream & os = cout ) const;
+  inline const string &Name() const { return _name; }
+  inline const string &FullName() const { return _fullname; }
 
-  void Error( const string& msg ) const;
-  void Debug( const string& msg ) const;
+  void DisplayHierarchy(int level = 0, ostream &os = cout) const;
 
-  virtual void Display( ostream & os = cout ) const;
+  void Error(const string &msg) const;
+  void Debug(const string &msg) const;
+
+  virtual void Display(ostream &os = cout) const;
 };
 
 #endif
