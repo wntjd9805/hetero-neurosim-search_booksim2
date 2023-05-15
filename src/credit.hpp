@@ -31,6 +31,8 @@
 #include <set>
 #include <stack>
 
+using namespace std;
+
 class Credit {
 
 public:
