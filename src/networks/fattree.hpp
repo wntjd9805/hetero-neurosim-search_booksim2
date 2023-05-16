@@ -57,6 +57,7 @@ class FatTree : public Network {
   int *_inputChannelMap;
   int *_outputChannelMap;
   int *_latencyMap;
+  int latency;
 
 public:
   FatTree(const Configuration &config, const string &name);
@@ -66,6 +67,8 @@ public:
   // Methods to Assit Routing Functions
   //
   static int PreferedPort(const Router *r, int index);
+  int _ToRouterNum(int detph, int pos);
+  int _ToNeuroSimNum(int depth, int pos);
 };
 
 #endif

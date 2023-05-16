@@ -50,19 +50,21 @@
 
 #include "fattree.hpp"
 #include "misc_utils.hpp"
+#include <cmath>
+#include <iostream>
 
 //#define FATTREE_DEBUG
 
 FatTree::FatTree(const Configuration &config, const string &name)
     : Network(config, name) {
 
+  this->latency = config.GetInt("latency_per_flit");
   _ComputeSize(config);
   _Alloc();
   _BuildNet(config);
 }
 
 void FatTree::_ComputeSize(const Configuration &config) {
-
   _k = config.GetInt("k");
   _n = config.GetInt("n");
 
@@ -76,6 +78,10 @@ void FatTree::_ComputeSize(const Configuration &config) {
 
   //(channels per level = k*routers_per_level* up/down) * (levels-1)
   _channels = (2 * _k * powi(_k, _n - 1)) * (_n - 1);
+
+  _nodes += powi(_k, _n - 1);
+  _size += 1;
+  _channels += 2 * powi(_k, _n - 1);
 }
 
 void FatTree::RegisterRoutingFunctions() {}
@@ -100,7 +106,7 @@ void FatTree::_BuildNet(const Configuration &config) {
     for (pos = 0; pos < nPos; ++pos) {
 
       if (level == 0) // top routers is zero
-        degree = _k;
+        degree = _k + 1;
       else
         degree = 2 * _k;
 
@@ -114,6 +120,13 @@ void FatTree::_BuildNet(const Configuration &config) {
       _timed_modules.push_back(r);
     }
   }
+  degree = 2 * powi(_k, _n - 1);
+  id = _ToRouterNum(_n, 0);
+  name.str("");
+  name << "router_level" << _n << "_" << 0;
+  Router *r = Router::NewRouter(config, this, name.str(), id, degree, degree);
+  _routers[id] = r;
+  _timed_modules.push_back(r);
 
   //
   // Connect Channels to Routers
@@ -130,11 +143,17 @@ void FatTree::_BuildNet(const Configuration &config) {
     for (int index = 0; index < _k; index++) {
       int link = pos * _k + index;
       _Router(_n - 1, pos)->AddInputChannel(_inject[link], _inject_cred[link]);
+      // std::cerr << _ToRouterNum(_n - 1, pos) << "->(input)" << link
+      //           << std::endl;
       _Router(_n - 1, pos)->AddOutputChannel(_eject[link], _eject_cred[link]);
-      _inject[link]->SetLatency(1);
-      _inject_cred[link]->SetLatency(1);
-      _eject[link]->SetLatency(1);
-      _eject_cred[link]->SetLatency(1);
+      // std::cerr << _ToRouterNum(_n - 1, pos) << "->(output)" << link
+      //           << std::endl;
+      int latency = ceil(static_cast<float>(this->latency) * log_two(_nodes) /
+                         powi(_k, _n / 2 + 2));
+      _inject[link]->SetLatency(latency);
+      _inject_cred[link]->SetLatency(latency);
+      _eject[link]->SetLatency(latency);
+      _eject_cred[link]->SetLatency(latency);
     }
   }
 
@@ -149,12 +168,16 @@ void FatTree::_BuildNet(const Configuration &config) {
   // connect all down output channels
   // level n-1's down channel are injection channels
   for (level = 0; level < _n - 1; level++) {
+    int latency = ceil(static_cast<float>(this->latency) * log_two(_nodes) /
+                       powi(_k, level / 2 + 2));
     for (pos = 0; pos < nPos; ++pos) {
       for (port = 0; port < _k; ++port) {
         int link = (level * chan_per_level) + pos * _k + port;
         _Router(level, pos)->AddOutputChannel(_chan[link], _chan_cred[link]);
-        _chan[link]->SetLatency(1);
-        _chan_cred[link]->SetLatency(1);
+        // std::cerr << _ToRouterNum(level, pos) << "->(output)" << link
+        //           << std::endl;
+        _chan[link]->SetLatency(latency);
+        _chan_cred[link]->SetLatency(latency);
 #ifdef FATTREE_DEBUG
         cout << _Router(level, pos)->Name() << " "
              << "down output " << port << " "
@@ -166,13 +189,17 @@ void FatTree::_BuildNet(const Configuration &config) {
   // connect all up output channels
   // level 0 has no up chnanels
   for (level = 1; level < _n; level++) {
+    int latency = ceil(static_cast<float>(this->latency) * log_two(_nodes) /
+                       powi(_k, (level - 1) / 2 + 2));
     for (pos = 0; pos < nPos; ++pos) {
       for (port = 0; port < _k; ++port) {
         int link =
             (level * chan_per_level - chan_per_direction) + pos * _k + port;
         _Router(level, pos)->AddOutputChannel(_chan[link], _chan_cred[link]);
-        _chan[link]->SetLatency(1);
-        _chan_cred[link]->SetLatency(1);
+        // std::cerr << _ToRouterNum(level, pos) << "->(output)" << link
+        //           << std::endl;
+        _chan[link]->SetLatency(latency);
+        _chan_cred[link]->SetLatency(latency);
 #ifdef FATTREE_DEBUG
         cout << _Router(level, pos)->Name() << " "
              << "up output " << port << " "
@@ -205,6 +232,8 @@ void FatTree::_BuildNet(const Configuration &config) {
                    + (neighborhood_pos) / routers_per_branch; // port on router
 
         _Router(level, pos)->AddInputChannel(_chan[link], _chan_cred[link]);
+        // std::cerr << _ToRouterNum(level, pos) << "->(input)" << link
+        //           << std::endl;
 #ifdef FATTREE_DEBUG
         cout << _Router(level, pos)->Name() << " "
              << "down input " << port << " "
@@ -232,6 +261,8 @@ void FatTree::_BuildNet(const Configuration &config) {
                    + (neighborhood_pos) / routers_per_branch; // port on router
 
         _Router(level, pos)->AddInputChannel(_chan[link], _chan_cred[link]);
+        // std::cerr << _ToRouterNum(level, pos) << "->(input)" << link
+        //           << std::endl;
 #ifdef FATTREE_DEBUG
         cout << _Router(level, pos)->Name() << " "
              << "up input " << port << " "
@@ -240,6 +271,59 @@ void FatTree::_BuildNet(const Configuration &config) {
       }
     }
   }
+  // Connecting Root Injection & Ejection Channels
+  for (pos = 0; pos < nPos; ++pos) {
+    int link = _nodes - nPos + pos;
+    _routers[_ToRouterNum(_n, 0)]->AddInputChannel(_inject[link],
+                                                   _inject_cred[link]);
+    // std::cerr << _ToRouterNum(_n, 0) << "->(input)" << link << std::endl;
+    _routers[_ToRouterNum(_n, 0)]->AddOutputChannel(_eject[link],
+                                                    _eject_cred[link]);
+    // std::cerr << _ToRouterNum(_n, 0) << "->(output)" << link << std::endl;
+    int latency =
+        ceil(static_cast<float>(this->latency) * log_two(_nodes) / powi(_k, 1));
+    _inject[link]->SetLatency(latency);
+    _inject_cred[link]->SetLatency(latency);
+    _eject[link]->SetLatency(latency);
+    _eject_cred[link]->SetLatency(latency);
+  }
+  for (pos = 0; pos < nPos; ++pos) {
+    int link = _channels - 2 * nPos + pos;
+    _routers[_ToRouterNum(_n, 0)]->AddOutputChannel(_chan[link],
+                                                    _chan_cred[link]);
+
+    // std::cerr << _ToRouterNum(_n, 0) << "->(output)" << link << std::endl;
+
+    _chan[link]->SetLatency(1);
+    _chan_cred[link]->SetLatency(1);
+  }
+  for (pos = 0; pos < nPos; ++pos) {
+    int link = _channels - nPos + pos;
+    _routers[_ToRouterNum(0, pos)]->AddOutputChannel(_chan[link],
+                                                     _chan_cred[link]);
+
+    // std::cerr << _ToRouterNum(0, pos) << "->(output)" << link << std::endl;
+
+    _chan[link]->SetLatency(1);
+    _chan_cred[link]->SetLatency(1);
+  }
+  for (pos = 0; pos < nPos; ++pos) {
+    int link = _channels - nPos + pos;
+    _routers[_ToRouterNum(_n, 0)]->AddInputChannel(_chan[link],
+                                                   _chan_cred[link]);
+    // std::cerr << _ToRouterNum(_n, 0) << "->(input)" << link << std::endl;
+    _chan[link]->SetLatency(1);
+    _chan_cred[link]->SetLatency(1);
+  }
+  for (pos = 0; pos < nPos; ++pos) {
+    int link = _channels - 2 * nPos + pos;
+    _routers[_ToRouterNum(0, pos)]->AddInputChannel(_chan[link],
+                                                    _chan_cred[link]);
+    // std::cerr << _ToRouterNum(0, pos) << "->(input)" << link << std::endl;
+    _chan[link]->SetLatency(1);
+    _chan_cred[link]->SetLatency(1);
+  }
+
 #ifdef FATTREE_DEBUG
   cout << "\nChannel assigned\n";
 #endif
@@ -248,4 +332,9 @@ void FatTree::_BuildNet(const Configuration &config) {
 Router *&FatTree::_Router(int depth, int pos) {
   assert(depth < _n && pos < powi(_k, _n - 1));
   return _routers[depth * powi(_k, _n - 1) + pos];
+}
+
+inline int FatTree::_ToRouterNum(int depth, int pos) {
+  // assert(depth < _n && pos < powi(_k, _n - 1));
+  return depth * powi(_k, _n - 1) + pos;
 }

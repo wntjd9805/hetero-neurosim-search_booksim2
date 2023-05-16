@@ -185,6 +185,24 @@ bool Simulate(BookSimConfig const &config, vector<string> input_node_name,
   return result;
 }
 
+// Example:
+// /root/neurosim/booksim2/src/booksim \
+//   /root/neurosim/booksim2/src/examples/mesh88_lat \
+//   14 \ # config.k
+//   1 \ # config_small1.k
+//   1 \ # config_small2.k
+//   12 \ # config.latency_per_flit
+//   12 \ # config_small1.latency_per_flit
+//   12 \ # config_small2.latency_per_flit
+//   /root/neurosim/Inference_pytorch/CLUSTER_ResNet50_SA:128_PE:2_TL:32.txt \ #
+//   mapping_file_path
+//   /root/neurosim/Inference_pytorch/SMALL_ResNet50_SA:128_PE:2_TL:32.txt \ #
+//   small_mapping_file_path 0.00328099 \ # config.wire_length_tile 0.00328099 \
+//   # config_small1.wire_length_tile 0.00328099 \ #
+//   config_small2.wire_length_tile 128 \ # config.flit_size 128 \ #
+//   config_small1.flit_size 128 \ # config_small2.flit_size 0 \ # is_anynet n/a
+//   \ # network_file (used if is_anynet is true) 3 \ # node 1 # type: BIG(1),
+//   SMALL_send(2), SMALL_receive(3)
 int main(int argc, char **argv) {
 
   BookSimConfig config;
