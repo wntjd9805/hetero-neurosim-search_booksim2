@@ -844,8 +844,8 @@ void TrafficManager::_GeneratePacket(int source, int stype, int cl, int time,
   if (_traffic[cl] == "neurosim") {
     packet_destination = _cur_node_location[cur_node];
     // cout<< "size" << size << endl;
-    // cout<< "source" << source << endl;
-    // cout<< "packet_destination" << packet_destination << endl;
+    cout<< "source" << source << endl;
+  
   }
 
   bool record = false;
@@ -877,12 +877,15 @@ void TrafficManager::_GeneratePacket(int source, int stype, int cl, int time,
         Error(err.str());
       }
       packet_destination = rinfo->source;
+      cout<< "rinfo"<< endl;
       time = rinfo->time;
       record = rinfo->record;
       _repliesPending[source].pop_front();
       rinfo->Free();
     }
   }
+  cout<< "packet_destination" << packet_destination << endl;
+  cout<< "_nodes" << _nodes << endl;
   if ((packet_destination < 0) || (packet_destination >= _nodes)) {
     ostringstream err;
     err << "Incorrect packet destination " << packet_destination

@@ -149,7 +149,7 @@ void FatTree::_BuildNet(const Configuration &config) {
       // std::cerr << _ToRouterNum(_n - 1, pos) << "->(output)" << link
       //           << std::endl;
       int latency = ceil(static_cast<float>(this->latency) * log_two(_nodes) /
-                         powi(_k, _n / 2 + 2));
+                         powi(_k, _n / 2 + 1));
       _inject[link]->SetLatency(latency);
       _inject_cred[link]->SetLatency(latency);
       _eject[link]->SetLatency(latency);

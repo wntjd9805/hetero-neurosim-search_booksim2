@@ -289,8 +289,30 @@ void fattree_nca(const Router *r, const Flit *f, int in_channel,
         powi(gK, gN - router_depth); // span of the tree from this router
 
     // NCA reached going down
-    if (dest < (router_neighborhood + 1) * router_coverage &&
-        dest >= router_neighborhood * router_coverage) {
+    assert(dest <= powi(gK, gN) + powi(gK, gN - 1));
+    // cerr << "DEBUG: " << GetSimTime() << " | "
+    //      << "node" << dest << " | "
+    //      << "Retiring flit " << f->id << " (packet " << f->pid
+    //      << ", src = " << f->src << ", dest = " << f->dest
+    //      << ", hops = " << f->hops << ", flat = " << f->atime - f->itime <<
+    //      ")."
+    //      << endl;
+    // assert(dest != f->src);
+    if (router_depth == gN && f->src >= powi(gK, gN)) {
+      if (dest < powi(gK, gN))
+        out_port = dest % powi(gK, gN - 1) + powi(gK, gN - 1);
+      else
+        out_port = dest % powi(gK, gN - 1);
+    } else if (dest >= powi(gK, gN)) {
+      if (router_depth == 0) {
+        out_port = 2;
+      } else if (router_depth == gN) {
+        out_port = dest % powi(gK, gN - 1);
+      } else {
+        out_port = gK + RandomInt(gK - 1);
+      }
+    } else if (dest < (router_neighborhood + 1) * router_coverage &&
+               dest >= router_neighborhood * router_coverage) {
       // down ports are numbered first
 
       // ejection
@@ -305,7 +327,16 @@ void fattree_nca(const Router *r, const Flit *f, int in_channel,
     } else {
       // up ports are numbered last
       assert(in_channel < gK); // came from a up channel
-      out_port = gK + RandomInt(gK - 1);
+      out_port = gK;
+      int random1 = RandomInt(gK - 1); // Chose two ports out of the possible at
+                                       // random, compare loads, choose one.
+      int random2 = RandomInt(gK - 1);
+      if (r->GetUsedCredit(out_port + random1) >
+          r->GetUsedCredit(out_port + random2)) {
+        out_port = out_port + random2;
+      } else {
+        out_port = out_port + random1;
+      }
     }
   }
   outputs->Clear();

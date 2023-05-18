@@ -27,7 +27,7 @@
 
 /*booksim_config.cpp
  *
- *Contains all the configurable parameters in a network
+ *Contains all the configurable parameters in a networkaf
  *
  */
 
