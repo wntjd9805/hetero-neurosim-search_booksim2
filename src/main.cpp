@@ -436,7 +436,7 @@ int main(int argc, char **argv) {
       } else if (stoi(argv[argc - 1]) == 2) { //"SMALL_send"
         cout << node_type.find(node)->second << endl;
         if (node_type.find(node)->second == "chip1" &&
-            config_small1.GetInt("k") != 1) {
+            stoi(argv[3]) != 1) {
           vector<string> input_node_small = {"0"};
           vector<int> input_location_small = {0};
           if (config_small1.GetStr("topology") == "fattree") {
@@ -457,7 +457,7 @@ int main(int argc, char **argv) {
                    cur_node_location_small, input_activation_small,
                    inject_small);
         } else if (node_type.find(node)->second == "chip2" &&
-                   config_small2.GetInt("k") != 1) {
+                   stoi(argv[4]) != 1) {
           cout << "llll" << endl;
           vector<string> input_node_small = {"0"};
           vector<int> input_location_small = {0};
@@ -490,7 +490,7 @@ int main(int argc, char **argv) {
         }
       } else if (stoi(argv[argc - 1]) == 3) { //""SMALL_receive""
         if (node_type.find(node)->second == "chip1" &&
-            config_small1.GetInt("k") != 1) {
+            stoi(argv[3])!= 1) {
           vector<string> input_node_small = {};
           vector<int>::iterator ptr;
           for (ptr = neurosim_map_small.find(to_string(node) + "_0")
@@ -530,7 +530,7 @@ int main(int argc, char **argv) {
                    cur_node_location_small, input_activation_small,
                    inject_small);
         } else if (node_type.find(node)->second == "chip2" &&
-                   config_small2.GetInt("k") != 1) {
+                   stoi(argv[4]) != 1) {
           vector<string> input_node_small = {};
           vector<int>::iterator ptr;
           for (ptr = neurosim_map_small.find(to_string(node) + "_0")
