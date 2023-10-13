@@ -67,6 +67,6 @@ sim_type = latency;
 injection_rate = 0.005;
 sample_period = 1;
 sim_power = 1;
-tech_file = /root/neurosim/booksim2/src/power/techfile.txt;
+tech_file = /root/hetero-neurosim-search/booksim2/src/power/techfile.txt;
 latency_per_flit = 4;
 watch_out = -;
