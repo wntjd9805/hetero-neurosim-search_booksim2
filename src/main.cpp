@@ -187,24 +187,6 @@ bool Simulate(BookSimConfig const &config, vector<string> input_node_name,
   return result;
 }
 
-// Example:
-// /root/neurosim/booksim2/src/booksim \
-//   /root/neurosim/booksim2/src/examples/mesh88_lat \
-//   14 \ # config.k
-//   1 \ # config_small1.k
-//   1 \ # config_small2.k
-//   12 \ # config.latency_per_flit
-//   12 \ # config_small1.latency_per_flit
-//   12 \ # config_small2.latency_per_flit
-//   /root/neurosim/Inference_pytorch/CLUSTER_ResNet50_SA:128_PE:2_TL:32.txt \ #
-//   mapping_file_path
-//   /root/neurosim/Inference_pytorch/SMALL_ResNet50_SA:128_PE:2_TL:32.txt \ #
-//   small_mapping_file_path 0.00328099 \ # config.wire_length_tile 0.00328099 \
-//   # config_small1.wire_length_tile 0.00328099 \ #
-//   config_small2.wire_length_tile 128 \ # config.flit_size 128 \ #
-//   config_small1.flit_size 128 \ # config_small2.flit_size 0 \ # is_anynet n/a
-//   \ # network_file (used if is_anynet is true) 3 \ # node 1 # type: BIG(1),
-//   SMALL_send(2), SMALL_receive(3)
 int main(int argc, char **argv) {
 
   BookSimConfig config;
@@ -251,9 +233,8 @@ int main(int argc, char **argv) {
     InitializeRoutingMap(config);
     Simulate(config, input_name , input_location,cur_node_location, input_activation, inject);
   }
-
   else{
-    int is_anynet = stoi(argv[16]);
+    int is_anynet = stoi(argv[12]);
     config.Assign("k", stoi(argv[2]));
     if (config.GetStr("topology") == "fattree") {
       config.Assign("k", 2);
@@ -261,12 +242,11 @@ int main(int argc, char **argv) {
       k_ = log_two(k_ * k_);
       config.Assign("n", k_);
     }
-    config.Assign("latency_per_flit", stoi(argv[5]));
-    config.Assign("wire_length_tile", stof(argv[10]) * 1000);
-    // config.Assign("flit_size",stoi(argv[13]));
-    config.Assign("flit_size", stoi(argv[13]));
+    config.Assign("latency_per_flit", stoi(argv[4]));
+    config.Assign("wire_length_tile", stof(argv[8]) * 1000);
+    config.Assign("flit_size", stoi(argv[10]));
     if (is_anynet) {
-      config.Assign("network_file", argv[17]);
+      config.Assign("network_file", argv[13]);
     }
 
     BookSimConfig config_small1;
@@ -278,22 +258,10 @@ int main(int argc, char **argv) {
       k_ = log_two(k_ * k_);
       config_small1.Assign("n", k_);
     }
-    config_small1.Assign("latency_per_flit", stoi(argv[6]));
-    config_small1.Assign("wire_length_tile", stof(argv[11]) * 1000);
-    config_small1.Assign("flit_size", stoi(argv[14]));
+    config_small1.Assign("latency_per_flit", stoi(argv[5]));
+    config_small1.Assign("wire_length_tile", stof(argv[9]) * 1000);
+    config_small1.Assign("flit_size", stoi(argv[11]));
 
-    BookSimConfig config_small2;
-    config_small2 = config;
-    config_small2.Assign("k", stoi(argv[4]));
-    if (config_small2.GetStr("topology") == "fattree") {
-      config_small2.Assign("k", 2);
-      int k_ = stoi(argv[4]);
-      k_ = log_two(k_ * k_);
-      config_small2.Assign("n", k_);
-    }
-    config_small2.Assign("latency_per_flit", stoi(argv[7]));
-    config_small2.Assign("wire_length_tile", stof(argv[12]) * 1000);
-    config_small2.Assign("flit_size", stoi(argv[15]));
 
     _k = config.GetInt("k");
     _n = config.GetInt("n");
@@ -301,7 +269,7 @@ int main(int argc, char **argv) {
     // _flit_size=config.GetInt("flit_size");
 
     // Neurosim
-    string mapping_file_path = argv[8];
+    string mapping_file_path = argv[6];
 
     if (mapping_file_path.empty() && config.GetStr("traffic") == "neurosim") {
       assert("Neurosim mode but there is no Neurosim mapping file");
@@ -369,7 +337,7 @@ int main(int argc, char **argv) {
         }
         openFile.close();
       }
-      string small_mapping_file_path = argv[9];
+      string small_mapping_file_path = argv[7];
       ifstream openFile_small;
       openFile_small.open(small_mapping_file_path.data());
       if (openFile_small.is_open()) {
@@ -440,7 +408,7 @@ int main(int argc, char **argv) {
         }
 
         inject = injection_rate.find(node)->second;
-        cout << node_type.find(node)->second << endl;
+        // cout << node_type.find(node)->second << endl;
         // cout<<"Time taken node " << node<<endl;
         // cout<<"Time taken node " << iter->second;
         // cout << input_location << endl;
@@ -458,8 +426,8 @@ int main(int argc, char **argv) {
           Simulate(config, input_node.find(node)->second, input_location,
                   cur_node_location, input_activation, inject);
         } else if (stoi(argv[argc - 1]) == 2) { //"SMALL_send"
-          cout << node_type.find(node)->second << endl;
-          if (node_type.find(node)->second == "chip1" &&
+          // cout << node_type.find(node)->second << endl;
+          if (node_type.find(node)->second != "non_MAC" &&
               stoi(argv[3]) != 1) {
             vector<string> input_node_small = {"0"};
             vector<int> input_location_small = {0};
@@ -480,32 +448,6 @@ int main(int argc, char **argv) {
             Simulate(config_small1, input_node_small, input_location_small,
                     cur_node_location_small, input_activation_small,
                     inject_small);
-          } else if (node_type.find(node)->second == "chip2" &&
-                    stoi(argv[4]) != 1) {
-            cout << "llll" << endl;
-            vector<string> input_node_small = {"0"};
-            vector<int> input_location_small = {0};
-            if (config_small2.GetStr("topology") == "fattree") {
-              vector<int> input_location_small ={powi(2, config_small2.GetInt("n"))};
-            }
-            cout << to_string(node)
-                << neurosim_map_small.find(to_string(node) + "_0")->second
-                << endl;
-            vector<int> cur_node_location_small =
-                neurosim_map_small.find(to_string(node) + "_0")->second;
-            cur_node_location_small.erase(cur_node_location_small.begin());
-            cout << "llll" << endl;
-            int input_activation_small = ceil(
-                activation_size_small_send.find(to_string(node) + "_0")->second /
-                config_small2.GetInt("flit_size"));
-            float inject_small =
-                injection_rate_small_send.find(to_string(node) + "_0")->second;
-            print_vector(cur_node_location_small);
-            config_small2.Assign("injection_rate", inject_small);
-            InitializeRoutingMap(config_small2);
-            Simulate(config_small2, input_node_small, input_location_small,
-                    cur_node_location_small, input_activation_small,
-                    inject_small);
           } else {
             cout << "Time taken is " << 0 << " cycles" << endl;
             cout << "- Total Power: " << 0 << endl;
@@ -513,7 +455,7 @@ int main(int argc, char **argv) {
             cout << "- Total leak Power: " << 0 << endl;
           }
         } else if (stoi(argv[argc - 1]) == 3) { //""SMALL_receive""
-          if (node_type.find(node)->second == "chip1" &&
+          if (node_type.find(node)->second != "non_MAC" &&
               stoi(argv[3])!= 1) {
             vector<string> input_node_small = {};
             vector<int>::iterator ptr;
@@ -534,8 +476,6 @@ int main(int argc, char **argv) {
             if (config_small1.GetStr("topology") == "fattree") {
               vector<int> cur_node_location_small ={powi(2, config_small1.GetInt("n"))};
             }
-            
-
             int input_activation_small =
                 ceil(activation_size_small_receive.find(to_string(node) + "_0")
                         ->second /
@@ -551,41 +491,6 @@ int main(int argc, char **argv) {
             config_small1.Assign("injection_rate", inject_small);
             InitializeRoutingMap(config_small1);
             Simulate(config_small1, input_node_small, input_location_small,
-                    cur_node_location_small, input_activation_small,
-                    inject_small);
-          } else if (node_type.find(node)->second == "chip2" &&
-                    stoi(argv[4]) != 1) {
-            vector<string> input_node_small = {};
-            vector<int>::iterator ptr;
-            for (ptr = neurosim_map_small.find(to_string(node) + "_0")
-                          ->second.begin();
-                ptr !=
-                neurosim_map_small.find(to_string(node) + "_0")->second.end();
-                ++ptr) {
-              input_node_small.push_back(to_string(*ptr));
-            }
-            input_node_small.erase(input_node_small.begin());
-            vector<int> input_location_small =
-                neurosim_map_small.find(to_string(node) + "_0")->second;
-            input_location_small.erase(input_location_small.begin());
-            vector<int> cur_node_location_small = {0};
-            if (config_small2.GetStr("topology") == "fattree") {
-              vector<int> cur_node_location_small ={powi(2, config_small2.GetInt("n"))};
-            }
-
-            int input_activation_small =
-                ceil(activation_size_small_receive.find(to_string(node) + "_0")
-                        ->second /
-                    config_small2.GetInt("flit_size"));
-            float inject_small =
-                injection_rate_small_receive.find(to_string(node) + "_0")->second;
-            cout << input_activation_small << endl;
-            ;
-            cout << inject_small << endl;
-            print_vector(cur_node_location_small);
-            config_small2.Assign("injection_rate", inject_small);
-            InitializeRoutingMap(config_small2);
-            Simulate(config_small2, input_node_small, input_location_small,
                     cur_node_location_small, input_activation_small,
                     inject_small);
           } else {
