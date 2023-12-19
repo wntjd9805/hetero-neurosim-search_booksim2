@@ -844,7 +844,7 @@ void TrafficManager::_GeneratePacket(int source, int stype, int cl, int time,
   if (_traffic[cl] == "neurosim") {
     packet_destination = _cur_node_location[cur_node];
     // cout<< "size" << size << endl;
-    cout<< "source" << source << endl;
+    // cout<< "source" << source << endl;
   
   }
 
@@ -877,15 +877,15 @@ void TrafficManager::_GeneratePacket(int source, int stype, int cl, int time,
         Error(err.str());
       }
       packet_destination = rinfo->source;
-      cout<< "rinfo"<< endl;
+      // cout<< "rinfo"<< endl;
       time = rinfo->time;
       record = rinfo->record;
       _repliesPending[source].pop_front();
       rinfo->Free();
     }
   }
-  cout<< "packet_destination" << packet_destination << endl;
-  cout<< "_nodes" << _nodes << endl;
+  // cout<< "packet_destination" << packet_destination << endl;
+  // cout<< "_nodes" << _nodes << endl;
   if ((packet_destination < 0) || (packet_destination >= _nodes)) {
     ostringstream err;
     err << "Incorrect packet destination " << packet_destination
@@ -1066,7 +1066,7 @@ void TrafficManager::_Step() {
 
   if (!_empty_network || _remain_packet()) {
     _remain_packet();
-    cout << "Inject" << endl;
+    // cout << "Inject" << endl;
     _Inject();
   }
 
@@ -1658,7 +1658,7 @@ bool TrafficManager::_remain_packet() {
   for (it = _input_activation_size.begin(); it != _input_activation_size.end();
        it++) {
     if (it->second > 0) {
-      cout << it->second << " " << count_flit << endl;
+      // cout << it->second << " " << count_flit << endl;
       return true;
     }
   }
@@ -1715,7 +1715,7 @@ bool TrafficManager::Run() {
 
     while (packets_left) {
       _Step();
-      cout << "step" << _remain_packet() << endl;
+      // cout << "step" << _remain_packet() << endl;
       ++empty_steps;
 
       if (empty_steps % 1000 == 0) {

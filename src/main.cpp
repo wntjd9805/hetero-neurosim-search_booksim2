@@ -228,8 +228,8 @@ int main(int argc, char **argv) {
     for(int i = stoi(argv[9]); i < stoi(argv[9])+stoi(argv[10]); i++){
       cur_node_location.push_back(i);
     }
-    cout << input_location <<endl;
-    cout << cur_node_location <<endl;
+    // cout << input_location <<endl;
+    // cout << cur_node_location <<endl;
     InitializeRoutingMap(config);
     Simulate(config, input_name , input_location,cur_node_location, input_activation, inject);
   }
@@ -414,10 +414,10 @@ int main(int argc, char **argv) {
         // cout << input_location << endl;
         // cout << input_activation << endl;
         // cout << cur_node_location << endl;
-        
+        // return 0;
         // cout<<"jjj"<<endl;
-        cout << inject << endl;
-        cout << "type" << argv[argc - 1] << endl;
+        // cout << inject << endl;
+        // cout << "type" << argv[argc - 1] << endl;
 
 
         if (stoi(argv[argc - 1]) == 1) { // BIG
