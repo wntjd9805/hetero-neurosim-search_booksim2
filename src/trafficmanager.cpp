@@ -990,6 +990,9 @@ void TrafficManager::_Inject() {
                 _GeneratePacket(
                     input, stype, c,
                     _include_queuing == 1 ? _qtime[input][c] : _time, cur_node);
+                if(_sim_state == 0){
+                  break;
+                }
               }
               generated = true;
               // cout<<"end_gen_packet"<<endl;
